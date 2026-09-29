@@ -17,6 +17,18 @@ import {
   ApplicationStatus,
 } from "../src/types.js";
 import { sanitizeAndDeduplicateSkills, normalizeSkill, CANONICAL_SKILL_DATABASE } from "./ontology.js";
+import { envConfig } from "./config/env.js";
+import { getSessionSecret } from "./config/secrets.js";
+
+function issueSignedSessionToken(): string {
+  const rawId = crypto.randomBytes(24).toString("hex");
+  const sig = crypto
+    .createHmac("sha256", getSessionSecret())
+    .update(rawId)
+    .digest("hex")
+    .slice(0, 24);
+  return `${rawId}.${sig}`;
+}
 
 interface Session {
   token: string;
@@ -76,7 +88,7 @@ interface DatabaseSchema {
   applications: JobApplicationRecord[];
 }
 
-const DATA_DIR = path.join(process.cwd(), ".data");
+const DATA_DIR = envConfig.dataDir;
 const DATA_FILE = path.join(DATA_DIR, "resumate_store.json");
 
 // Ensure data directory exists
@@ -122,9 +134,9 @@ function persistDatabase() {
 
 // ==================== AUTH & USERS ====================
 
-export function hashPassword(password: string, salt?: string): { hash: string; salt: string } {
+export function hashPassword(password: string, salt?: string, iterations = 1000): { hash: string; salt: string } {
   const finalSalt = salt || crypto.randomBytes(16).toString("hex");
-  const hash = crypto.pbkdf2Sync(password, finalSalt, 1000, 64, "sha512").toString("hex");
+  const hash = crypto.pbkdf2Sync(password, finalSalt, iterations, 64, "sha512").toString("hex");
   return { hash, salt: finalSalt };
 }
 
@@ -158,7 +170,7 @@ export function authenticateUser(email: string, passwordPlain: string): { user: 
     throw new Error("Invalid email or password.");
   }
 
-  const token = crypto.randomBytes(32).toString("hex");
+  const token = issueSignedSessionToken();
   const now = new Date();
   const expiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
   db.sessions.push({
@@ -186,7 +198,7 @@ export function findOrCreateFirebaseUser(uid: string, email: string, name?: stri
     user.name = name;
   }
 
-  const token = crypto.randomBytes(32).toString("hex");
+  const token = issueSignedSessionToken();
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
   db.sessions.push({
     token,

@@ -1,8 +1,69 @@
-node_modules/
-build/
-dist/
-coverage/
-.DS_Store
-*.log
-.env*
+# ==================================================
+# ENVIRONMENT & LOCAL SECRETS (NEVER COMMIT)
+# ==================================================
+.env
+.env.*
 !.env.example
+!.env.template
+
+.local-secrets/
+private/
+secrets/
+
+# ==================================================
+# CERTIFICATES & PRIVATE KEYS
+# ==================================================
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+
+# ==================================================
+# CLOUD / SERVICE ACCOUNT & CREDENTIAL FILES
+# Note: Public Firebase Web SDK config (firebase-applet-config.json)
+# is intentionally NOT ignored so the frontend Web SDK can initialize.
+# ==================================================
+serviceAccountKey.json
+firebase-service-account.json
+service-account.json
+*-service-account.json
+firebase-adminsdk*.json
+*-firebase-adminsdk-*.json
+credentials.json
+secrets.json
+google-credentials.json
+gcp-key.json
+
+# ==================================================
+# LOCAL RUNTIME DATA & UPLOADS
+# ==================================================
+.data/
+uploads/
+tmp/
+temp/
+
+# ==================================================
+# DEPENDENCIES & BUILD ARTIFACTS
+# ==================================================
+node_modules/
+dist/
+build/
+coverage/
+.vite/
+.firebase/
+
+# ==================================================
+# LOGS & OS / IDE METADATA
+# ==================================================
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo

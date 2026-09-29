@@ -1,7 +1,23 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, User as FirebaseUser } from "firebase/auth";
 import { getFirestore, doc, getDocFromServer, setDoc, collection, getDocs } from "firebase/firestore";
-import firebaseConfig from "../../firebase-applet-config.json";
+import firebaseAppletConfig from "../../firebase-applet-config.json";
+
+const env = (import.meta as any).env || {};
+
+// Public Firebase Web SDK configuration (safe for client bundle; enforced via Firestore Security Rules)
+const firebaseConfig = {
+  projectId: env.VITE_FIREBASE_PROJECT_ID || firebaseAppletConfig.projectId,
+  appId: env.VITE_FIREBASE_APP_ID || firebaseAppletConfig.appId,
+  apiKey: env.VITE_FIREBASE_API_KEY || firebaseAppletConfig.apiKey,
+  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN || firebaseAppletConfig.authDomain,
+  firestoreDatabaseId:
+    env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || firebaseAppletConfig.firestoreDatabaseId,
+  storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET || firebaseAppletConfig.storageBucket,
+  messagingSenderId:
+    env.VITE_FIREBASE_MESSAGING_SENDER_ID || firebaseAppletConfig.messagingSenderId,
+  measurementId: firebaseAppletConfig.measurementId,
+};
 
 // Initialize Firebase App
 const app = initializeApp(firebaseConfig);

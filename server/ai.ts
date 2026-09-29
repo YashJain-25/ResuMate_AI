@@ -1,12 +1,16 @@
 import { GoogleGenAI, GenerateContentParameters, GenerateContentResponse, ThinkingLevel } from "@google/genai";
+import { getGeminiApiKey, requireGeminiApiKey } from "./config/secrets.js";
 
 // Lazy-initialized GenAI client
 let aiClient: GoogleGenAI | null = null;
+let lastUsedApiKey = "";
 
 export function getGenAI(): GoogleGenAI {
-  if (!aiClient) {
+  const currentKey = getGeminiApiKey();
+  if (!aiClient || lastUsedApiKey !== currentKey) {
+    lastUsedApiKey = currentKey;
     aiClient = new GoogleGenAI({
-      apiKey: process.env.GEMINI_API_KEY || "",
+      apiKey: currentKey,
       httpOptions: {
         headers: {
           "User-Agent": "aistudio-build",
@@ -60,10 +64,7 @@ export async function generateContentWithFallback(
   promptOrParts: string | any[],
   options: GenerationOptions = {}
 ): Promise<string> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error("GEMINI_API_KEY is not configured in the environment.");
-  }
+  requireGeminiApiKey();
 
   const ai = getGenAI();
   const preferFast = options.preferFastLite !== false;

@@ -1,0 +1,58 @@
+name: Repository Security & Secret Audit
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+    branches: ["main", "master"]
+
+permissions:
+  contents: read
+
+jobs:
+  secret-and-build-audit:
+    name: Secret Scan & TypeScript Build Verification
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify No Tracked .env or Private Credential Files
+        run: |
+          echo "Checking git index for forbidden secret files..."
+          FORBIDDEN_FILES=$(git ls-files | grep -E '(^\.env$|^\.env\..*|\.pem$|\.key$|\.p12$|\.pfx$|service-account\.json$|firebase-adminsdk.*\.json$|^\.data/)' | grep -v '^\.env\.example$' || true)
+          if [ -n "$FORBIDDEN_FILES" ]; then
+            echo "::error::Forbidden credential or runtime data files are tracked in Git:"
+            echo "$FORBIDDEN_FILES"
+            exit 1
+          fi
+          echo "No forbidden secret files tracked."
+
+      - name: Verify No Server Secrets Exposed via VITE_ Prefix in Source
+        run: |
+          echo "Scanning source files for forbidden VITE_ secret references..."
+          LEAKS=$(grep -RInE 'VITE_(GEMINI_API_KEY|GOOGLE_API_KEY|JWT_SECRET|SESSION_SECRET|LINKEDIN_CLIENT_SECRET|SUPABASE_SERVICE_ROLE_KEY|FIREBASE_PRIVATE_KEY|PRIVATE_KEY)' src/ server/ vite.config.ts || true)
+          if [ -n "$LEAKS" ]; then
+            echo "::error::Server-only secret referenced with VITE_ prefix:"
+            echo "$LEAKS"
+            exit 1
+          fi
+          echo "VITE_ client boundary check passed."
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: TypeScript & Lint Check
+        run: npm run lint
+
+      - name: Production Build Verification
+        run: npm run build

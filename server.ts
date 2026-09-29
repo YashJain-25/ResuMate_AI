@@ -34,11 +34,18 @@ import {
   getRecommendedJobsForCandidate,
   calculateJobMatch,
 } from "./server/jobService.js";
+import { envConfig } from "./server/config/env.js";
+import {
+  getLinkedInOAuthSecrets,
+  sanitizeErrorMessage,
+  validateServerSecretsOnStartup,
+} from "./server/config/secrets.js";
 
 dotenv.config();
+validateServerSecretsOnStartup();
 
 const app = express();
-const PORT = Number(process.env.PORT) || 3000;
+const PORT = envConfig.port;
 
 // ==================== TOP-LEVEL DESERIALIZATION ====================
 // Guaranteed ordering: Parsers mounted upstream of all routes
@@ -155,8 +162,8 @@ const handleDocumentExtraction = async (req: Request, res: Response) => {
       detectedType: extraction.detectedType,
     });
   } catch (err: any) {
-    console.error("[Document Extraction Error]:", err);
-    res.status(500).json({ error: err.message || "Failed to extract text from document." });
+    console.error("[Document Extraction Error]:", sanitizeErrorMessage(err));
+    res.status(500).json({ error: sanitizeErrorMessage(err, "Failed to extract text from document.") });
   }
 };
 
@@ -168,11 +175,11 @@ app.post("/api/extract-document", handleDocumentExtraction);
 
 // 1. OAuth 2.0 Popup Authorization URL (uses LINKEDIN_CLIENT_ID when configured, or provides status)
 app.get("/api/linkedin/auth-url", (req: Request, res: Response) => {
-  const clientId = process.env.LINKEDIN_CLIENT_ID || "";
+  const { clientId, redirectUriOverride } = getLinkedInOAuthSecrets();
   const host = req.headers["x-forwarded-host"] || req.headers.host || `localhost:${PORT}`;
   const proto = req.headers["x-forwarded-proto"] || "https";
-  const baseUrl = process.env.APP_URL || `${proto}://${host}`;
-  const redirectUri = `${baseUrl.replace(/\/$/, "")}/api/linkedin/callback`;
+  const baseUrl = envConfig.appUrl || `${proto}://${host}`;
+  const redirectUri = redirectUriOverride || `${baseUrl.replace(/\/$/, "")}/api/linkedin/callback`;
 
   if (!clientId) {
     res.json({
@@ -215,12 +222,11 @@ app.get("/api/linkedin/callback", async (req: Request, res: Response) => {
   }
 
   try {
-    const clientId = process.env.LINKEDIN_CLIENT_ID || "";
-    const clientSecret = process.env.LINKEDIN_CLIENT_SECRET || "";
+    const { clientId, clientSecret, redirectUriOverride } = getLinkedInOAuthSecrets();
     const host = req.headers["x-forwarded-host"] || req.headers.host || `localhost:${PORT}`;
     const proto = req.headers["x-forwarded-proto"] || "https";
-    const baseUrl = process.env.APP_URL || `${proto}://${host}`;
-    const redirectUri = `${baseUrl.replace(/\/$/, "")}/api/linkedin/callback`;
+    const baseUrl = envConfig.appUrl || `${proto}://${host}`;
+    const redirectUri = redirectUriOverride || `${baseUrl.replace(/\/$/, "")}/api/linkedin/callback`;
 
     const tokenRes = await fetch("https://www.linkedin.com/oauth/v2/accessToken", {
       method: "POST",
@@ -261,7 +267,7 @@ app.get("/api/linkedin/callback", async (req: Request, res: Response) => {
     res.send(`
       <html><body><script>
         if (window.opener) {
-          window.opener.postMessage({ type: 'LINKEDIN_OAUTH_ERROR', error: ${JSON.stringify(err.message || "OAuth token exchange failed")} }, '*');
+          window.opener.postMessage({ type: 'LINKEDIN_OAUTH_ERROR', error: ${JSON.stringify(sanitizeErrorMessage(err, "OAuth token exchange failed"))} }, '*');
           window.close();
         }
       </script><p>Authentication failed. You can close this window.</p></body></html>
@@ -294,8 +300,8 @@ app.post("/api/linkedin/extract", async (req: Request, res: Response) => {
 
     res.json({ linkedInData });
   } catch (err: any) {
-    console.error("[POST /api/linkedin/extract] Error:", err);
-    res.status(500).json({ error: err.message || "Failed to extract LinkedIn profile skills." });
+    console.error("[POST /api/linkedin/extract] Error:", sanitizeErrorMessage(err));
+    res.status(500).json({ error: sanitizeErrorMessage(err, "Failed to extract LinkedIn profile skills.") });
   }
 });
 
@@ -330,8 +336,8 @@ app.post("/api/analyses", async (req: Request, res: Response) => {
 
     res.status(201).json({ analysis: record });
   } catch (err: any) {
-    console.error("[POST /api/analyses] Error:", err);
-    res.status(500).json({ error: err.message || "Analysis processing failed." });
+    console.error("[POST /api/analyses] Error:", sanitizeErrorMessage(err));
+    res.status(500).json({ error: sanitizeErrorMessage(err, "Analysis processing failed.") });
   }
 });
 
@@ -529,8 +535,8 @@ app.post("/api/resumes/generate", async (req: Request, res: Response) => {
 
     res.status(201).json(result);
   } catch (err: any) {
-    console.error("[generate_resume] Error:", err);
-    res.status(500).json({ error: err.message || "Resume generation failed." });
+    console.error("[generate_resume] Error:", sanitizeErrorMessage(err));
+    res.status(500).json({ error: sanitizeErrorMessage(err, "Resume generation failed.") });
   }
 });
 
@@ -607,8 +613,8 @@ app.get("/api/jobs", async (req: Request, res: Response) => {
 
     res.json({ jobs, total: jobs.length });
   } catch (err: any) {
-    console.error("[GET /api/jobs] Error:", err);
-    res.status(500).json({ error: err.message || "Failed to load jobs." });
+    console.error("[GET /api/jobs] Error:", sanitizeErrorMessage(err));
+    res.status(500).json({ error: sanitizeErrorMessage(err, "Failed to load jobs.") });
   }
 });
 
@@ -654,8 +660,8 @@ app.post("/api/jobs/recommendations", async (req: Request, res: Response) => {
 
     res.json({ recommendations, candidateSkillsCount: candidateSkills.length });
   } catch (err: any) {
-    console.error("[POST /api/jobs/recommendations] Error:", err);
-    res.status(500).json({ error: err.message || "Failed to generate job recommendations." });
+    console.error("[POST /api/jobs/recommendations] Error:", sanitizeErrorMessage(err));
+    res.status(500).json({ error: sanitizeErrorMessage(err, "Failed to generate job recommendations.") });
   }
 });
 
@@ -699,8 +705,8 @@ app.post("/api/jobs/match-single", async (req: Request, res: Response) => {
     const match = calculateJobMatch(job, candidateSkills, parsedResume, profile, jobTrack);
     res.json({ job, match });
   } catch (err: any) {
-    console.error("[POST /api/jobs/match-single] Error:", err);
-    res.status(500).json({ error: err.message || "Failed to calculate job match." });
+    console.error("[POST /api/jobs/match-single] Error:", sanitizeErrorMessage(err));
+    res.status(500).json({ error: sanitizeErrorMessage(err, "Failed to calculate job match.") });
   }
 });
 
@@ -772,8 +778,8 @@ app.post("/api/jobs/apply", async (req: Request, res: Response) => {
         : "Application tracked. Official external application portal opened.",
     });
   } catch (err: any) {
-    console.error("[POST /api/jobs/apply] Error:", err);
-    res.status(500).json({ error: err.message || "Failed to record application." });
+    console.error("[POST /api/jobs/apply] Error:", sanitizeErrorMessage(err));
+    res.status(500).json({ error: sanitizeErrorMessage(err, "Failed to record application.") });
   }
 });
 
@@ -849,7 +855,7 @@ app.post("/api/orchestration/run", async (req: Request, res: Response) => {
 
     res.json({ orchestration: result });
   } catch (err: any) {
-    res.status(500).json({ error: err.message || "Autonomous orchestration failed." });
+    res.status(500).json({ error: sanitizeErrorMessage(err, "Autonomous orchestration failed.") });
   }
 });
 
