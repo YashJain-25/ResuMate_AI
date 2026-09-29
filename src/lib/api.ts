@@ -344,6 +344,7 @@ export const api = {
   // ----------------- AUTONOMOUS ORCHESTRATION AGENT -----------------
   async runOrchestration(payload: {
     analysisId?: string;
+    analysisRecord?: AnalysisRecord;
     resumeText?: string;
     jobDescriptionText?: string;
     jobTrack?: JobTrack;

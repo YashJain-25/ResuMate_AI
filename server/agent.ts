@@ -428,6 +428,7 @@ export class ResuMateCareerAgent {
    */
   static async runAutonomousOrchestration(options: {
     analysisId?: string;
+    analysisRecord?: AnalysisRecord;
     resumeText?: string;
     jobDescriptionText?: string;
     isGuest?: boolean;
@@ -443,8 +444,14 @@ export class ResuMateCareerAgent {
       ? getAnalysisById(options.analysisId)
       : undefined;
 
+    // If the analysis was loaded from Cloud Firestore on the client and not yet in local store, persist it now
+    if (!analysis && options.analysisRecord && options.analysisRecord.id && options.analysisRecord.parsedResume && options.analysisRecord.parsedJob) {
+      saveAnalysis(options.analysisRecord);
+      analysis = options.analysisRecord;
+    }
+
     if (!analysis && options.resumeText && options.jobDescriptionText) {
-      const analysisId = crypto.randomUUID();
+      const analysisId = options.analysisId || crypto.randomUUID();
       const now = new Date().toISOString();
       const effectiveTrack = autoDetectJobTrack(
         options.jobDescriptionText,

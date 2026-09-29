@@ -272,7 +272,14 @@ export const OrchestrationAgentView: React.FC<OrchestrationAgentViewProps> = ({
     }
     let cancelled = false;
     api
-      .getOrchestrationState(currentAnalysis.id)
+      .runOrchestration({
+        analysisId: currentAnalysis.id,
+        analysisRecord: currentAnalysis,
+        resumeText: currentAnalysis.resumeText,
+        jobDescriptionText: currentAnalysis.jobDescriptionText,
+        jobTrack: currentAnalysis.jobTrack,
+        linkedInData: currentAnalysis.linkedInData,
+      })
       .then((res) => {
         if (!cancelled && res?.orchestration) {
           setOrchestrationResult(res.orchestration);
@@ -301,6 +308,11 @@ export const OrchestrationAgentView: React.FC<OrchestrationAgentViewProps> = ({
     try {
       const res = await api.runOrchestration({
         analysisId: currentAnalysis.id,
+        analysisRecord: currentAnalysis,
+        resumeText: currentAnalysis.resumeText,
+        jobDescriptionText: currentAnalysis.jobDescriptionText,
+        jobTrack: currentAnalysis.jobTrack,
+        linkedInData: currentAnalysis.linkedInData,
         forceResynthesize,
       });
       setOrchestrationResult(res.orchestration);

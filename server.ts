@@ -827,6 +827,7 @@ app.post("/api/orchestration/run", async (req: Request, res: Response) => {
     const body = req.body && typeof req.body === "object" ? req.body : {};
     const {
       analysisId,
+      analysisRecord,
       resumeText,
       jobDescriptionText,
       jobTrack,
@@ -836,6 +837,7 @@ app.post("/api/orchestration/run", async (req: Request, res: Response) => {
 
     const result = await ResuMateCareerAgent.runAutonomousOrchestration({
       analysisId,
+      analysisRecord,
       resumeText,
       jobDescriptionText,
       isGuest: !user,
@@ -847,7 +849,6 @@ app.post("/api/orchestration/run", async (req: Request, res: Response) => {
 
     res.json({ orchestration: result });
   } catch (err: any) {
-    console.error("[POST /api/orchestration/run] Error:", err);
     res.status(500).json({ error: err.message || "Autonomous orchestration failed." });
   }
 });
@@ -855,6 +856,11 @@ app.post("/api/orchestration/run", async (req: Request, res: Response) => {
 app.get("/api/orchestration/state/:analysisId", async (req: Request, res: Response) => {
   try {
     const user = getAuthenticatedUser(req);
+    const existing = getAnalysisById(req.params.analysisId);
+    if (!existing) {
+      res.status(404).json({ error: "Analysis not in local cache yet; use POST /api/orchestration/run." });
+      return;
+    }
     const result = await ResuMateCareerAgent.runAutonomousOrchestration({
       analysisId: req.params.analysisId,
       isGuest: !user,
@@ -862,7 +868,6 @@ app.get("/api/orchestration/state/:analysisId", async (req: Request, res: Respon
     });
     res.json({ orchestration: result });
   } catch (err: any) {
-    console.error("[GET /api/orchestration/state/:analysisId] Error:", err);
     res.status(404).json({ error: err.message || "Could not load orchestration state." });
   }
 });
