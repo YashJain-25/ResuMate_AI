@@ -1,0 +1,11 @@
+{
+  "name": "Remix ResuMate AI",
+  "description": "AI Career Readiness \u0026 Resume Intelligence Platform - analyze skills, verify evidence, evaluate readiness, and generate ATS resumes.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1,0 +1,169 @@
+@import "tailwindcss";
+
+@theme {
+  --text-xs: 0.85rem;
+  --text-xs--line-height: 1.35rem;
+  --text-sm: 0.965rem;
+  --text-sm--line-height: 1.45rem;
+  --text-base: 1.075rem;
+  --text-base--line-height: 1.65rem;
+  --text-lg: 1.225rem;
+  --text-lg--line-height: 1.8rem;
+  --text-xl: 1.375rem;
+  --text-xl--line-height: 1.95rem;
+  --text-2xl: 1.65rem;
+  --text-2xl--line-height: 2.15rem;
+  --text-3xl: 2.05rem;
+  --text-3xl--line-height: 2.5rem;
+  --text-4xl: 2.5rem;
+  --text-4xl--line-height: 2.9rem;
+}
+
+@layer base {
+  html {
+    font-size: 17px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  @media (min-width: 1024px) {
+    html {
+      font-size: 17.5px;
+    }
+  }
+
+  body {
+    font-size: 1rem;
+    line-height: 1.6;
+    letter-spacing: -0.005em;
+  }
+
+  /* Ensure form inputs, selects, textareas, and buttons have accessible readable text */
+  input,
+  textarea,
+  select {
+    font-size: 1rem !important;
+    line-height: 1.5 !important;
+  }
+
+  label {
+    font-size: 0.95rem;
+    line-height: 1.45;
+  }
+}
+
+/* Upgrade micro arbitrary font utilities across application UI (excluding print/1-page sheet scaling) */
+main :not(.resume-sheet-container) .text-\[8px\],
+header .text-\[8px\],
+nav .text-\[8px\],
+[role="dialog"] .text-\[8px\] {
+  font-size: 0.78rem !important;
+  line-height: 1.2rem !important;
+}
+
+main :not(.resume-sheet-container) .text-\[9px\],
+header .text-\[9px\],
+nav .text-\[9px\],
+[role="dialog"] .text-\[9px\] {
+  font-size: 0.82rem !important;
+  line-height: 1.25rem !important;
+}
+
+main :not(.resume-sheet-container) .text-\[10px\],
+header .text-\[10px\],
+nav .text-\[10px\],
+[role="dialog"] .text-\[10px\] {
+  font-size: 0.86rem !important;
+  line-height: 1.3rem !important;
+}
+
+main :not(.resume-sheet-container) .text-\[11px\],
+header .text-\[11px\],
+nav .text-\[11px\],
+[role="dialog"] .text-\[11px\] {
+  font-size: 0.92rem !important;
+  line-height: 1.4rem !important;
+}
+
+main :not(.resume-sheet-container) .text-\[12px\],
+header .text-\[12px\],
+nav .text-\[12px\],
+[role="dialog"] .text-\[12px\] {
+  font-size: 0.975rem !important;
+  line-height: 1.48rem !important;
+}
+
+main :not(.resume-sheet-container) .text-\[13px\],
+header .text-\[13px\],
+nav .text-\[13px\],
+[role="dialog"] .text-\[13px\] {
+  font-size: 1.02rem !important;
+  line-height: 1.55rem !important;
+}
+
+@layer utilities {
+  .font-serif-classic {
+    font-family: 'EB Garamond', 'Merriweather', Georgia, 'Times New Roman', serif;
+  }
+  .font-sans-modern {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  }
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 6mm 8mm;
+  }
+
+  html, body {
+    font-size: 16px !important;
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Hide navigation, toolbars, buttons, toast banners, feedback modals in print */
+  header,
+  nav,
+  footer,
+  aside,
+  .print\:hidden,
+  [data-print-hidden="true"],
+  [role="dialog"] {
+    display: none !important;
+  }
+
+  /* Reset layout constraints for 1-page paper sheet print */
+  main, .resume-sheet-container {
+    padding: 0 !important;
+    margin: 0 auto !important;
+    border: none !important;
+    box-shadow: none !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  /* Prevent awkward page break splits inside resume blocks */
+  .resume-section {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  .resume-entry {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Ensure text colors print with high contrast */
+  a {
+    text-decoration: none !important;
+    color: inherit !important;
+  }
+}
